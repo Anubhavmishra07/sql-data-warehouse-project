@@ -1,166 +1,82 @@
-# 🚀 Data Warehouse and Analytics Project
+# Data Warehouse and Analytics Project
 
-<p align="center">
-  <b>End-to-End Modern Data Warehouse using MySQL 8.0</b><br>
-  Built with the Medallion Architecture (Bronze • Silver • Gold)
-</p>
+Welcome to the **Data Warehouse and Analytics Project** repository! 🚀
 
-<p align="center">
+This project demonstrates an end-to-end **Data Warehouse** built using **MySQL 8.0**, following the **Medallion Architecture (Bronze, Silver, and Gold)**. It covers the complete data engineering workflow—from ingesting raw data to creating a business-ready analytical model.
 
-![MySQL](https://img.shields.io/badge/MySQL-8.0-4479A1?logo=mysql&logoColor=white)
-![SQL](https://img.shields.io/badge/SQL-Advanced-blue)
-![ETL](https://img.shields.io/badge/ETL-Pipeline-success)
-![Architecture](https://img.shields.io/badge/Architecture-Medallion-orange)
-![License](https://img.shields.io/badge/License-MIT-green)
-
-</p>
-
----
-
-## 📖 Overview
-
-This repository demonstrates the design and implementation of a complete **Data Warehouse and Analytics** solution using **MySQL 8.0**.
-
-The project follows the **Medallion Architecture**, implementing an end-to-end ETL pipeline that ingests raw CRM and ERP data, transforms it into clean business-ready datasets, and exposes a Star Schema for analytical reporting.
+Designed as a portfolio project, it showcases industry best practices in **ETL development**, **data modeling**, **data quality**, and **SQL-based analytics**.
 
 ---
 
 # 🏗️ Data Architecture
 
-<p align="center">
-<img src="docs/data_architecture.png" width="900">
-</p>
+The project follows the **Medallion Architecture**, consisting of **Bronze**, **Silver**, and **Gold** layers.
 
-### Architecture Layers
+![Data Architecture](docs/data_architecture.png)
 
-| Layer | Purpose |
-|-------|---------|
-| 🥉 Bronze | Raw data ingestion from CSV files using `LOAD DATA INFILE` |
-| 🥈 Silver | Data cleansing, standardization, normalization and integration |
-| 🥇 Gold | Business-ready analytical model using a Star Schema |
+### Bronze Layer
+Stores raw data exactly as received from the source systems. Data is imported from CSV files into MySQL using `LOAD DATA INFILE`.
 
----
+### Silver Layer
+Applies data cleansing, standardization, normalization, and integration to produce clean, reliable datasets.
 
-# 🔄 ETL Process
-
-<p align="center">
-<img src="docs/ETL.png" width="900">
-</p>
-
-The ETL pipeline performs:
-
-- Extract data from CRM and ERP CSV files
-- Bulk load into Bronze tables
-- Clean and standardize data
-- Apply business rules
-- Integrate multiple source systems
-- Publish analytical views
+### Gold Layer
+Creates business-ready analytical views using a **Star Schema**, consisting of fact and dimension tables optimized for reporting and analytics.
 
 ---
 
-# 🌊 Data Flow
+# 📖 Project Overview
 
-<p align="center">
-<img src="docs/data_flow.png" width="900">
-</p>
-
-This diagram illustrates how data flows from source systems through the Bronze, Silver and Gold layers until it becomes analytics-ready.
-
----
-
-# 🔗 Data Integration
-
-<p align="center">
-<img src="docs/data_integration.png" width="900">
-</p>
-
-Customer and product information from CRM and ERP systems are integrated into unified business entities used by the analytical model.
+- Design a modern Data Warehouse using the Medallion Architecture.
+- Build ETL pipelines to ingest, clean, transform, and integrate data.
+- Model analytical data using Fact and Dimension tables.
+- Perform SQL-based analytics on business-ready datasets.
+- Implement data quality validation across warehouse layers.
 
 ---
 
-# ⭐ Star Schema (Data Model)
+# 🎯 Skills Demonstrated
 
-<p align="center">
-<img src="docs/data_model.png" width="900">
-</p>
-
-The Gold layer consists of:
-
-- **gold_dim_customers**
-- **gold_dim_products**
-- **gold_fact_sales**
-
-forming a classic Star Schema optimized for reporting and analytical queries.
-
----
-
-# 📂 Source Systems
-
-### CRM
-- Customer Information
-- Product Information
-- Sales Transactions
-
-### ERP
-- Customer Master Data
-- Product Categories
-- Geographic Information
+- MySQL 8.0
+- Data Warehousing
+- Data Engineering
+- ETL Pipeline Development
+- Data Modeling
+- Star Schema Design
+- SQL Development
+- Data Cleansing
+- Data Integration
+- Data Quality Validation
+- Analytics & Reporting
 
 ---
 
-# 🛠️ Technology Stack
+# 🛠️ Tech Stack
 
-| Category | Technology |
-|----------|------------|
+| Component | Technology |
+|-----------|------------|
 | Database | MySQL 8.0 |
-| IDE | MySQL Workbench |
-| Source | CSV Files |
-| Loading | LOAD DATA INFILE |
+| SQL IDE | MySQL Workbench |
+| Source Data | CSV Files |
+| Data Loading | LOAD DATA INFILE |
 | Documentation | Markdown |
 | Diagrams | Draw.io |
 | Version Control | Git & GitHub |
 
 ---
 
-# ✨ Features
-
-- End-to-End Data Warehouse
-- Medallion Architecture
-- ETL Pipeline
-- Data Cleansing & Standardization
-- Multi-source Data Integration
-- Star Schema Modeling
-- Fact & Dimension Design
-- SQL Analytics
-- Data Quality Validation
-- Professional Documentation
-
----
-
-# 📁 Repository Structure
+# 📂 Repository Structure
 
 ```text
 sql-data-warehouse-project/
-│
 ├── datasets/
-│
 ├── docs/
-│   ├── data_architecture.png
-│   ├── ETL.png
-│   ├── data_flow.png
-│   ├── data_integration.png
-│   ├── data_model.png
-│   ├── data_catalog.md
-│   ├── naming_conventions.md
-│   └── data_layers.pdf
-│
 ├── scripts/
 │   ├── init_database.sql
 │   ├── bronze/
 │   ├── silver/
 │   ├── gold/
 │   └── quality_checks/
-│
 ├── README.md
 ├── LICENSE
 └── .gitignore
@@ -168,15 +84,7 @@ sql-data-warehouse-project/
 
 ---
 
-# 🚀 Getting Started
-
-## Prerequisites
-
-- MySQL 8.0
-- MySQL Workbench
-- Git
-
-## Execution Order
+# 🚀 Execution Order
 
 ```text
 1. init_database.sql
@@ -191,35 +99,16 @@ sql-data-warehouse-project/
 
 ---
 
-# 📊 Skills Demonstrated
-
-- SQL Development
-- Data Engineering
-- Data Warehousing
-- ETL Pipeline Development
-- Data Modeling
-- Star Schema Design
-- Data Integration
-- Data Quality
-- Analytical SQL
-
----
-
-# 🔮 Future Enhancements
+# 📈 Future Enhancements
 
 - Incremental Loading
 - Change Data Capture (CDC)
 - Slowly Changing Dimensions (SCD Type 2)
-- Scheduling & Automation
-- Power BI / Tableau Dashboard
-- Performance Optimization
+- Power BI / Tableau Integration
+- Query Optimization
 
 ---
 
-# 📜 License
+# 🛡️ License
 
-Licensed under the **MIT License**.
-
----
-
-⭐ If you found this project useful, consider giving it a star!
+This project is licensed under the **MIT License**.
