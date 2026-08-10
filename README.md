@@ -98,17 +98,6 @@ sql-data-warehouse-project/
 ```
 
 ---
-
-# 📈 Future Enhancements
-
-- Incremental Loading
-- Change Data Capture (CDC)
-- Slowly Changing Dimensions (SCD Type 2)
-- Power BI / Tableau Integration
-- Query Optimization
-
----
-
 # 🛡️ License
 
 This project is licensed under the **MIT License**.
