@@ -1,0 +1,47 @@
+/*
+===============================================================================
+Load Silver: ERP Product Category Information
+===============================================================================
+Purpose:
+    Clean and transform ERP product category data from the Bronze layer
+    before loading it into the Silver layer.
+
+Transformations:
+    1. Remove unwanted whitespace and hidden characters from text columns.
+    2. Preserve the category and subcategory values after trimming.
+    3. Clean the maintenance value.
+===============================================================================
+*/
+
+TRUNCATE TABLE silver_erp_px_cat_g1v2;
+
+INSERT INTO silver_erp_px_cat_g1v2 (
+    id,
+    cat,
+    subcat,
+    maintenance
+)
+
+WITH cleaned_data AS (
+
+    SELECT
+        id,
+
+        -- Remove leading and trailing spaces
+        TRIM(cat) AS cat,
+
+        TRIM(subcat) AS subcat,
+
+        -- Remove whitespace and hidden characters
+        REGEXP_REPLACE(maintenance, '[[:space:]]+', '') AS cleaned_maintenance
+
+    FROM bronze_erp_px_cat_g1v2
+)
+
+SELECT
+    id,
+    cat,
+    subcat,
+    cleaned_maintenance AS maintenance
+
+FROM cleaned_data;
