@@ -1,0 +1,672 @@
+/*
+===============================================================================
+QUALITY CHECKS: BRONZE LAYER
+===============================================================================
+Purpose:
+    Validate the quality, consistency, integrity, and formatting of raw
+    Bronze-layer data before transforming and loading it into the Silver layer.
+
+Important:
+    These checks are performed on the raw source data.
+
+    If a check identifies a data-quality issue, the corresponding
+    transformation/cleaning logic should handle it during the Silver load.
+
+Sources Covered:
+    1. Bronze CRM Customer Information
+    2. Bronze CRM Product Information
+    3. Bronze CRM Sales Details
+    4. Bronze ERP Customer Information
+    5. Bronze ERP Location Information
+    6. Bronze ERP Product Category Information
+===============================================================================
+*/
+
+USE datawarehouse;
+
+
+/*
+===============================================================================
+1. BRONZE CRM CUSTOMER INFORMATION
+===============================================================================
+*/
+
+
+-- ============================================================================
+-- Check 1: Review Raw CRM Customer Data
+-- ============================================================================
+
+SELECT *
+FROM bronze_crm_cust_info;
+
+
+-- ============================================================================
+-- Check 2: Identify NULL or Duplicate Customer IDs
+-- ============================================================================
+-- Each customer ID should ideally be unique and should not be NULL.
+-- ============================================================================
+
+SELECT
+    cst_id,
+    COUNT(*) AS record_count
+
+FROM bronze_crm_cust_info
+
+GROUP BY
+    cst_id
+
+HAVING COUNT(*) > 1
+    OR cst_id IS NULL;
+
+
+-- ============================================================================
+-- Check 3: Detect Leading or Trailing Spaces
+-- ============================================================================
+-- Check all relevant string columns for unwanted leading or trailing spaces.
+-- ============================================================================
+
+SELECT
+    SUM(cst_firstname <> TRIM(cst_firstname)) AS firstname_spaces,
+    SUM(cst_lastname <> TRIM(cst_lastname)) AS lastname_spaces,
+    SUM(cst_gndr <> TRIM(cst_gndr)) AS gender_spaces,
+    SUM(cst_marital_status <> TRIM(cst_marital_status))
+        AS marital_status_spaces
+
+FROM bronze_crm_cust_info;
+
+
+-- ============================================================================
+-- Check 4: Inspect Individual Columns for Leading or Trailing Spaces
+-- ============================================================================
+-- These checks identify the actual records containing unwanted spaces.
+-- ============================================================================
+
+SELECT
+    cst_firstname
+FROM bronze_crm_cust_info
+WHERE cst_firstname <> TRIM(cst_firstname);
+
+
+SELECT
+    cst_lastname
+FROM bronze_crm_cust_info
+WHERE cst_lastname <> TRIM(cst_lastname);
+
+
+SELECT
+    cst_gndr
+FROM bronze_crm_cust_info
+WHERE cst_gndr <> TRIM(cst_gndr);
+
+
+SELECT
+    cst_marital_status
+FROM bronze_crm_cust_info
+WHERE cst_marital_status <> TRIM(cst_marital_status);
+
+
+-- ============================================================================
+-- Check 5: Review Gender Values
+-- ============================================================================
+-- Review distinct source values and their frequencies to identify
+-- inconsistent or unexpected gender representations.
+-- ============================================================================
+
+SELECT
+    cst_gndr,
+    COUNT(*) AS record_count
+
+FROM bronze_crm_cust_info
+
+GROUP BY
+    cst_gndr;
+
+
+-- ============================================================================
+-- Check 6: Review Marital Status Values
+-- ============================================================================
+
+SELECT
+    cst_marital_status,
+    COUNT(*) AS record_count
+
+FROM bronze_crm_cust_info
+
+GROUP BY
+    cst_marital_status;
+
+
+-- ============================================================================
+-- Check 7: Identify Invalid Customer Creation Dates
+-- ============================================================================
+
+SELECT *
+FROM bronze_crm_cust_info
+WHERE CAST(cst_create_date AS CHAR) = '0000-00-00';
+
+
+/*
+===============================================================================
+2. BRONZE CRM PRODUCT INFORMATION
+===============================================================================
+*/
+
+
+-- ============================================================================
+-- Check 8: Review Raw CRM Product Data
+-- ============================================================================
+
+SELECT *
+FROM bronze_crm_prd_info;
+
+
+-- ============================================================================
+-- Check 9: Identify NULL or Duplicate Product IDs
+-- ============================================================================
+
+SELECT
+    prd_id,
+    COUNT(*) AS record_count
+
+FROM bronze_crm_prd_info
+
+GROUP BY
+    prd_id
+
+HAVING COUNT(*) > 1
+    OR prd_id IS NULL;
+
+
+-- ============================================================================
+-- Check 10: Validate Product Category Key
+-- ============================================================================
+-- The first 5 characters of prd_key represent the category ID.
+-- Replace '-' with '_' before comparing it with the ERP category table.
+-- ============================================================================
+
+SELECT
+    REPLACE(
+        SUBSTRING(prd_key, 1, 5),
+        '-',
+        '_'
+    ) AS cat_id
+
+FROM bronze_crm_prd_info AS p
+
+WHERE REPLACE(
+          SUBSTRING(prd_key, 1, 5),
+          '-',
+          '_'
+      ) NOT IN (
+          SELECT id
+          FROM bronze_erp_px_cat_g1v2
+      );
+
+
+-- ============================================================================
+-- Check 11: Validate Product Key Consistency
+-- ============================================================================
+-- The product portion of prd_key should exist in the CRM sales details.
+-- ============================================================================
+
+SELECT
+    SUBSTRING(p.prd_key, 7) AS prd_key
+
+FROM bronze_crm_prd_info AS p
+
+WHERE SUBSTRING(p.prd_key, 7) NOT IN (
+    SELECT sls_prd_key
+    FROM bronze_crm_sales_details
+);
+
+
+-- ============================================================================
+-- Check 12: Detect Leading or Trailing Spaces
+-- ============================================================================
+
+SELECT
+    SUM(prd_key <> TRIM(prd_key)) AS prd_key_spaces,
+    SUM(prd_nm <> TRIM(prd_nm)) AS prd_nm_spaces,
+    SUM(prd_line <> TRIM(prd_line)) AS prd_line_spaces
+
+FROM bronze_crm_prd_info;
+
+
+-- ============================================================================
+-- Check 13: Identify NULL or Negative Product Costs
+-- ============================================================================
+
+SELECT
+    prd_cost
+
+FROM bronze_crm_prd_info
+
+WHERE prd_cost < 0
+   OR prd_cost IS NULL;
+
+
+-- ============================================================================
+-- Check 14: Review Product Line Values
+-- ============================================================================
+
+SELECT DISTINCT
+    prd_line
+
+FROM bronze_crm_prd_info
+
+ORDER BY
+    prd_line;
+
+
+-- ============================================================================
+-- Check 15: Validate Product Date Ranges
+-- ============================================================================
+-- The product end date should not be earlier than the start date.
+-- ============================================================================
+
+SELECT
+    prd_start_dt,
+    prd_end_dt
+
+FROM bronze_crm_prd_info
+
+WHERE prd_end_dt < prd_start_dt;
+
+
+/*
+===============================================================================
+3. BRONZE CRM SALES DETAILS
+===============================================================================
+*/
+
+
+-- ============================================================================
+-- Check 16: Detect Leading or Trailing Spaces in Order Numbers
+-- ============================================================================
+
+SELECT *
+FROM bronze_crm_sales_details
+
+WHERE sls_ord_num <> TRIM(sls_ord_num);
+
+
+-- ============================================================================
+-- Check 17: Validate Product Keys
+-- ============================================================================
+-- Every product key in the sales data should exist in the Silver product
+-- dimension.
+-- ============================================================================
+
+SELECT
+    s.sls_prd_key
+
+FROM bronze_crm_sales_details AS s
+
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM silver_crm_prd_info AS p
+    WHERE p.prd_key = s.sls_prd_key
+);
+
+
+-- ============================================================================
+-- Check 18: Validate Customer IDs
+-- ============================================================================
+-- Every customer ID in the sales data should exist in the Silver customer
+-- dimension.
+-- ============================================================================
+
+SELECT
+    s.sls_cust_id
+
+FROM bronze_crm_sales_details AS s
+
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM silver_crm_cust_info AS c
+    WHERE c.cst_id = s.sls_cust_id
+);
+
+
+-- ============================================================================
+-- Check 19: Validate Order Dates
+-- ============================================================================
+-- Raw order dates should be valid 8-digit YYYYMMDD values.
+-- ============================================================================
+
+SELECT
+    sls_order_dt
+
+FROM bronze_crm_sales_details
+
+WHERE sls_order_dt <= 0
+   OR LENGTH(sls_order_dt) <> 8;
+
+
+-- ============================================================================
+-- Check 20: Validate Ship Dates
+-- ============================================================================
+
+SELECT
+    sls_ship_dt
+
+FROM bronze_crm_sales_details
+
+WHERE sls_ship_dt <= 0
+   OR LENGTH(sls_ship_dt) <> 8;
+
+
+-- ============================================================================
+-- Check 21: Validate Due Dates
+-- ============================================================================
+
+SELECT
+    sls_due_dt
+
+FROM bronze_crm_sales_details
+
+WHERE sls_due_dt <= 0
+   OR LENGTH(sls_due_dt) <> 8;
+
+
+-- ============================================================================
+-- Check 22: Validate Sales Date Sequence
+-- ============================================================================
+-- The order date should not be later than the shipping date or due date.
+-- ============================================================================
+
+SELECT
+    sls_ord_num,
+    sls_order_dt,
+    sls_ship_dt,
+    sls_due_dt
+
+FROM bronze_crm_sales_details
+
+WHERE sls_order_dt > sls_ship_dt
+   OR sls_order_dt > sls_due_dt;
+
+
+-- ============================================================================
+-- Check 23: Validate Sales, Quantity, and Price
+-- ============================================================================
+-- Business rules:
+--     1. Sales = Quantity × Price
+--     2. Sales must be positive.
+--     3. Quantity must be positive.
+--     4. Price must be positive.
+--     5. NULL values are not allowed.
+-- ============================================================================
+
+SELECT DISTINCT
+    sls_sales,
+    sls_quantity,
+    sls_price
+
+FROM bronze_crm_sales_details
+
+WHERE sls_sales <> sls_quantity * sls_price
+   OR sls_sales IS NULL
+   OR sls_quantity IS NULL
+   OR sls_price IS NULL
+   OR sls_sales <= 0
+   OR sls_quantity <= 0
+   OR sls_price <= 0
+
+ORDER BY
+    sls_sales,
+    sls_quantity,
+    sls_price;
+
+
+/*
+===============================================================================
+4. BRONZE ERP CUSTOMER INFORMATION
+===============================================================================
+*/
+
+
+-- ============================================================================
+-- Check 24: Review Raw ERP Customer Data
+-- ============================================================================
+
+SELECT *
+FROM bronze_erp_cust_az12;
+
+
+-- ============================================================================
+-- Check 25: Identify Customer IDs Containing 'AW'
+-- ============================================================================
+-- Review customer IDs containing 'AW' to identify unexpected patterns
+-- in the source identifiers.
+-- ============================================================================
+
+SELECT
+    cid
+
+FROM bronze_erp_cust_az12
+
+WHERE cid LIKE '%AW%';
+
+
+-- ============================================================================
+-- Check 26: Validate Customer IDs Against CRM Customer Data
+-- ============================================================================
+-- The 'NAS' prefix is removed before comparison where applicable.
+-- ============================================================================
+
+SELECT
+    cid
+
+FROM bronze_erp_cust_az12
+
+WHERE CASE
+          WHEN cid LIKE 'NAS%'
+              THEN SUBSTRING(cid, 4)
+          ELSE cid
+      END NOT IN (
+          SELECT DISTINCT
+              cst_key
+          FROM silver_crm_cust_info
+      );
+
+
+-- ============================================================================
+-- Check 27: Validate Birth Dates
+-- ============================================================================
+-- Customer birth dates should not be in the future.
+-- ============================================================================
+
+SELECT
+    bdate
+
+FROM bronze_erp_cust_az12
+
+WHERE bdate >= CURRENT_DATE();
+
+
+-- ============================================================================
+-- Check 28: Review Gender Values
+-- ============================================================================
+
+SELECT DISTINCT
+    gen
+
+FROM bronze_erp_cust_az12
+
+ORDER BY
+    gen;
+
+
+-- ============================================================================
+-- Check 29: Detect Hidden or Unwanted Characters in Gender Values
+-- ============================================================================
+-- Compare original and trimmed lengths to identify invisible characters
+-- such as carriage returns (\r), line breaks (\n), or extra spaces.
+-- ============================================================================
+
+SELECT DISTINCT
+    gen,
+    LENGTH(gen) AS length,
+    LENGTH(TRIM(gen)) AS trimmed_length,
+    UPPER(TRIM(gen)) AS cleaned_gen
+
+FROM bronze_erp_cust_az12
+
+ORDER BY
+    gen;
+
+
+/*
+===============================================================================
+5. BRONZE ERP LOCATION INFORMATION
+===============================================================================
+*/
+
+
+-- ============================================================================
+-- Check 30: Review Raw ERP Location Data
+-- ============================================================================
+
+SELECT *
+FROM bronze_erp_loc_a101;
+
+
+-- ============================================================================
+-- Check 31: Validate Customer IDs
+-- ============================================================================
+-- Remove '-' from the ERP customer ID and verify that the cleaned ID exists
+-- in the CRM customer table.
+-- ============================================================================
+
+SELECT
+    REPLACE(cid, '-', '') AS cid
+
+FROM bronze_erp_loc_a101
+
+WHERE REPLACE(cid, '-', '') NOT IN (
+    SELECT cst_key
+    FROM silver_crm_cust_info
+);
+
+
+-- ============================================================================
+-- Check 32: Review Country Values
+-- ============================================================================
+-- Review distinct source country values to identify inconsistent
+-- representations.
+-- ============================================================================
+
+SELECT DISTINCT
+    cntry
+
+FROM bronze_erp_loc_a101
+
+ORDER BY
+    cntry;
+
+
+-- ============================================================================
+-- Check 33: Detect Leading, Trailing, or Hidden Characters
+-- ============================================================================
+-- Compare original and trimmed lengths to identify unwanted spaces or
+-- invisible characters such as carriage returns (\r) or line breaks (\n).
+-- ============================================================================
+
+SELECT DISTINCT
+    cntry,
+    LENGTH(cntry) AS length,
+    LENGTH(TRIM(cntry)) AS trimmed_length
+
+FROM bronze_erp_loc_a101
+
+ORDER BY
+    cntry;
+
+
+/*
+===============================================================================
+6. BRONZE ERP PRODUCT CATEGORY INFORMATION
+===============================================================================
+*/
+
+
+-- ============================================================================
+-- Check 34: Review Raw ERP Product Category Data
+-- ============================================================================
+
+SELECT *
+FROM bronze_erp_px_cat_g1v2;
+
+
+-- ============================================================================
+-- Check 35: Detect Leading or Trailing Spaces
+-- ============================================================================
+-- Identify records where text columns contain unwanted spaces.
+-- ============================================================================
+
+SELECT *
+
+FROM bronze_erp_px_cat_g1v2
+
+WHERE cat <> TRIM(cat)
+   OR subcat <> TRIM(subcat)
+   OR maintenance <> TRIM(maintenance);
+
+
+-- ============================================================================
+-- Check 36: Review Category Values
+-- ============================================================================
+
+SELECT DISTINCT
+    cat
+
+FROM bronze_erp_px_cat_g1v2
+
+ORDER BY
+    cat;
+
+
+-- ============================================================================
+-- Check 37: Review Subcategory Values
+-- ============================================================================
+
+SELECT DISTINCT
+    subcat
+
+FROM bronze_erp_px_cat_g1v2
+
+ORDER BY
+    subcat;
+
+
+-- ============================================================================
+-- Check 38: Review Maintenance Values
+-- ============================================================================
+
+SELECT DISTINCT
+    maintenance
+
+FROM bronze_erp_px_cat_g1v2
+
+ORDER BY
+    maintenance;
+
+
+-- ============================================================================
+-- Check 39: Detect Hidden or Unwanted Characters in Maintenance
+-- ============================================================================
+-- Compare original and trimmed lengths and inspect the hexadecimal
+-- representation to identify invisible characters.
+-- ============================================================================
+
+SELECT DISTINCT
+    maintenance,
+    LENGTH(maintenance) AS length,
+    LENGTH(TRIM(maintenance)) AS trimmed_length,
+    HEX(maintenance) AS hex_value
+
+FROM bronze_erp_px_cat_g1v2
+
+ORDER BY
+    maintenance;
