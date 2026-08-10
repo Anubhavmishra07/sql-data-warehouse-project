@@ -1,0 +1,29 @@
+/*
+===============================================================================
+Quality Checks: Gold Customer Dimension
+===============================================================================
+Purpose:
+    Validate the final Gold customer dimension after combining and transforming
+    data from the Silver layer.
+===============================================================================
+*/
+
+
+-- ============================================================================
+-- Check 1: Review Gold Customer Dimension
+-- ============================================================================
+
+SELECT *
+FROM gold_dim_customers;
+
+
+-- ============================================================================
+-- Check 2: Review Gender Values
+-- ============================================================================
+-- Verify that gender values are standardized correctly in the Gold layer.
+-- ============================================================================
+
+SELECT DISTINCT
+    gender
+FROM gold_dim_customers
+ORDER BY gender;
